@@ -11,6 +11,9 @@ dos
     jsr dos
 start
 
+    lda #$02
+    sta 710
+    sta 712
     jmp *
 inicio
 
