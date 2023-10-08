@@ -26,7 +26,7 @@ show
 shmemo
     .sb "******                     |"
     .sb "|BANCOS   | "
-shbanc
+shbancos
     .sb "**                         |"
     .sb "|TITULO 01| "
 shtit01    
@@ -56,14 +56,44 @@ fuente
     .sb +32,"ARSRRRRRRRRSRRRRRRRRRSRRRRRRRRRRRRRRRRRD"
     .sb "|1| "
 shbytes01
-    .sb "****** |    **** |    **           |"
+    .sb "****** |    "
+shblockes01
+    .sb "**** |    "
+shbank01
+    .sb "**           |"
     .sb "|2| "
 shbytes02
-    .sb "****** |    **** |    **           |"
+    .sb "****** |    "
+shblockes02
+    .sb "**** |    "
+shbank02
+    .sb "**           |"
     .sb "|3| "
 shbytes03
-    .sb "****** |    **** |    **           |"
+    .sb "****** |    "
+shblockes03
+    .sb "**** |    "
+shbank03
+    .sb "**           |"
     .sb +32,"ZRXRRRRRRRRXRRRRRRRRRXRRRRRRRRRRRRRRRRRC"
+datash
+    .by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sistema 
+    .by 0
+esnormal
+    .sb "NORMAL"
+esnhp8
+    .sb "NHP 8 "
+esstac
+    .sb "STAC  "
+esultra
+    .sb "ULTRA "
+essuper
+    .sb "SUPER "
+
+validosistema
+
+    rts
 reseter
     ldx #19
     lda #$00
@@ -86,15 +116,33 @@ reseter03
     sta shbytes03,x
     dex
     bpl reseter03
-    sta shbanc
-    sta shbanc+1
-
-
-
+    sta shbancos
+    sta shbancos+1
+    ldx #3
+reseter04
+    sta shblockes01,x
+    sta shblockes02,x
+    sta shblockes03,x
+    dex
+    bpl reseter04
+    sta shbank01
+    sta shbank01+1
+    sta shbank02
+    sta shbank02+1
+    sta shbank03
+    sta shbank03+1
 
 
     rts
-
+inverso
+    
+    rts
+noinverso
+    rts
+fsk
+    rts
+data01fsk
+    .by $05,$a0,$07,$a0,$05,$a0,$07,$a0,$00
 dos
     jmp ($0c)
 @start
