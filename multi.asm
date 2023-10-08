@@ -5,6 +5,16 @@
     icl 'base/loader.asm'
     icl 'base/pagina7.asm'
     icl 'base/pagina4.asm'
+;
+;valores principales que regula los baudios
+;
+b00600 = $05cc  ;timer a  600 bps
+b00800 = $0458  ;timer a  800 bps
+b00990 = $0380  ;timer a  991 bps
+b01150 = $0303  ;timer a 1150 bps
+b01400 = $0278  ;timer a 1400 bps
+;
+;display list principal
 dls
 :3    .by $70
     .by $46
@@ -46,14 +56,19 @@ shtit05
     .sb "|TITULO 06| "
 shtit06
     .sb "********************       |"
-    .sb "|SISTEMA  | NORMAL                     |"
-    .sb "|AUDIO    | ON                         |"
+    .sb "|SISTEMA  | "
+muestrosistema
+    .sb "NHP                        |"
+    .sb "|AUDIO    | "
+muestroaudio
+    .sb "ON                         |"
     .sb "|FUENTE   | "
 fuente 
     .sb "********************       |"
     .sb +32,"ARWRRRRRRRXWRRRRRRRRRWRRRRRRRRRRRRRRRRRD"
     .sb "|#| BYTES  | BLOQUES | BANCO           |"
     .sb +32,"ARSRRRRRRRRSRRRRRRRRRSRRRRRRRRRRRRRRRRRD"
+sharchi01
     .sb "|1| "
 shbytes01
     .sb "****** |    "
@@ -61,6 +76,7 @@ shblockes01
     .sb "**** |    "
 shbank01
     .sb "**           |"
+sharchi02
     .sb "|2| "
 shbytes02
     .sb "****** |    "
@@ -68,6 +84,7 @@ shblockes02
     .sb "**** |    "
 shbank02
     .sb "**           |"
+sharchi03
     .sb "|3| "
 shbytes03
     .sb "****** |    "
@@ -78,22 +95,64 @@ shbank03
     .sb +32,"ZRXRRRRRRRRXRRRRRRRRRXRRRRRRRRRRRRRRRRRC"
 datash
     .by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+;1er byte controla sistema de velocidad
+;2do byte controla audio
+;3er byte
 sistema 
-    .by 0
-esnormal
-    .sb "NORMAL"
-esnhp8
-    .sb "NHP 8 "
-esstac
-    .sb "STAC  "
-esultra
-    .sb "ULTRA "
-essuper
-    .sb "SUPER "
-
-validosistema
-
+    .by 0,0,0
+veonhp
+    .sb "NHP  "
+veonhp8
+    .sb "NHP 8"
+veostac
+    .sb "STAC "
+veoultra
+    .sb "ULTRA"
+veosuper
+    .sb "SUPER"
+veoaudioon
+    .sb "ON "
+veoaudiooff
+    .sb "OFF"
+;   
+;funcion para regular la velocidad
+;
+baud.600
+    lda #<b00600
+    jsr baud.m1
+    lda #>b00600
+    jmp baud.m2
+baud.800
+    lda #<b00800
+    jsr baud.m1
+    lda #>b00800
+    jsr baud.m2
+baud.990
+    lda #<b00990
+    jsr baud.m1
+    lda #>b00990
+    jsr baud.m2
+baud.1150
+    lda #<b01150
+    jsr baud.m1
+    lda #>b01150
+    jsr baud.m2
+baud.1400
+    lda #<b01400
+    jsr baud.m1
+    lda #>b01400
+baud.m2    
+    sta $eba8
+    sta $fd46
+    sta $fce1
     rts
+baud.m1
+    sta $eba3
+    sta $fd41
+    sta $fcdc
+    rts
+
+
 reseter
     ldx #19
     lda #$00
@@ -134,15 +193,34 @@ reseter04
 
 
     rts
+
+;
+;video inverso para datos de archivos
+;
 inverso
-    
+    clc
+    lda sharchi01+1
+    adc #128
+    sta sharchi01+1
     rts
 noinverso
     rts
+
+;
+;fsk
+;
 fsk
     rts
 data01fsk
     .by $05,$a0,$07,$a0,$05,$a0,$07,$a0,$00
+
+
+
+
+
+
+
+
 dos
     jmp ($0c)
 @start
@@ -155,7 +233,19 @@ start
     lda #$02
     sta 710
     sta 712
+;
+;colocamos interrupcion vbi
+;
+    ldy #<VBI
+    ldx #>VBI
+    lda #$07    ;diferida
+    jsr setvbv  
     jsr reseter
+
+
+
+
+    ;jsr inverso
     jmp *
 inicio
     jsr kem
@@ -169,5 +259,84 @@ inicio
     sty $08
     iny
     sty $0244
+    ldx #$00
+    stx sistema
+    stx sistema+1
+    stx sistema+2
     jmp start
+;rutina tecla option para cambiar el sistema
+.proc VBI
+    lda consol
+    cmp consol_anterior
+    beq fin
+    sta consol_anterior
+    cmp #$05    ;select
+    beq esselect
+    cmp #$03    ;option
+    bne fin
+;es option
+esoption
+    ldx sistema
+    cpx #4
+    bne esoption02
+    ldx #$ff
+esoption02
+    inx
+    stx sistema
+    lda #<veonhp
+    ldy #>veonhp
+    cpx #$00
+    beq esoption03
+    lda #<veonhp8
+    ldy #>veonhp8
+    cpx #$01
+    beq esoption03
+    lda #<veostac
+    ldy #>veostac
+    cpx #$02
+    beq esoption03
+    lda #<veoultra
+    ldy #>veoultra
+    cpx #$03
+    beq esoption03
+    lda #<veosuper
+    ldy #>veosuper
+esoption03
+    sta loop_copia+1
+    sty loop_copia+2
+    ldy #$04
+loop_copia
+    lda veonhp,y
+    sta muestrosistema,y
+    dey
+    bpl loop_copia
+    jmp fin
+esselect
+    ldx sistema+1
+    cpx #01
+    bne esselect02
+    ldx #$ff
+esselect02
+    inx
+    stx sistema+1
+    lda #<veoaudioon
+    ldy #>veoaudioon
+    cpx #$00
+    beq esselect03
+    lda #<veoaudiooff
+    ldy #>veoaudiooff
+esselect03
+    sta loop_copia_sel+1
+    sty loop_copia_sel+2
+    ldy #$02
+loop_copia_sel
+    lda veoaudioon,y
+    sta muestroaudio,y
+    dey
+    bpl loop_copia_sel
+fin
+    jmp $e462
+consol_anterior
+    .by $00
+.end
     run inicio
