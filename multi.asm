@@ -124,6 +124,9 @@ veoaudioon
     .sb "ON "
 veoaudiooff
     .sb "OFF"
+
+ry 
+    .by 0,0,0
 ;   
 ;funcion para regular la velocidad
 ;
@@ -173,9 +176,9 @@ reseter02
     sta shtit04,x
     sta shtit05,x
     sta shtit06,x
-    sta fuente,x
     dex
     bpl reseter02
+    jsr limpiofuente
     ldx #5
     lda #$10
 reseter03
@@ -234,16 +237,146 @@ reseter05
     stx $d301
     rts
 
+;funcion que limpia fuente
+limpiofuente
+    ldx #19
+    lda #$00
+limpiofuente01
+    sta fuente,x 
+    dex
+    bpl limpiofuente01
+    rts 
+ingresofuente
+    jsr limpiofuente
+    ldx #<fuente
+    ldy #>fuente
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
+    rts
+;************************************************
+;FUNCION QUE NOS PERMITE PODER CONVERTIR UN BYTE
+;EN ATASCII, USADO PARA INGRESO DE TITULOS Y
+;FUENTE, NO TIENE LIMITACIONES MAYORES EN LAS
+;PULSACIONES DEL TECLADO
+;************************************************
+ascint
+	cmp #32
+	bcc add64
+	cmp #96
+	bcc sub32
+	cmp #128
+	bcc remain
+	cmp #160
+	bcc add64
+	cmp #224
+	bcc SUB32
+	bcs remain
+add64
+	clc
+	adc #64
+	bcc remain
+sub32
+	sec
+	sbc #32
+remain
+	rts
 
-;
-;funcion que cierra perifericos
-;
+
+;************************************************
+;funcion para cerrar perfiericos
+;************************************************
 close
-    ldx #$10
-    lda #$0c
-    sta $0342,x
-    jmp $e456
+	ldx #$10
+	lda #$0C
+	sta $0342,X
+	jmp $E456
+;************************************************
+;MUESTRA EL DIRECTORIO EN PANTALLA
+;************************************************
 
+
+;*************************************************
+;rutina que nos permite poder ingresar informacion
+;a un campo especifico ya antes declarado
+;mostrando un cursor en forma parpadeante
+;************************************************
+;
+;************************************************
+;CURSOR PARPADEANTE
+;************************************************
+flsh
+	ldy ry
+	lda (pcrsr),Y
+	eor #63
+	sta (pcrsr),Y
+	lda #$10
+	sta $021A
+	rts
+;************************************************
+;ABRE PERIFERICO TECLADO
+;************************************************
+openk
+	lda #255
+	sta 764
+	ldx #$10
+	lda #$03
+	sta $0342,X
+	sta $0345,X
+	lda #$26
+	sta $0344,X
+	lda #$04
+	sta $034A,X
+	jsr $E456
+	lda #$07
+	sta $0342,X
+	lda #$00
+	sta $0348,X
+	sta $0349,X
+	sta ry
+	rts
+;************************************************
+;RUTINA QUE LEE LO TECLEADO
+;************************************************
+rutlee
+	ldx # <flsh
+	ldy # >flsh
+	lda #$10
+	stx $0228
+	sty $0229
+	sta $021A
+	jsr openk
+getec
+	jsr $E456
+	cmp #$7E
+	bne c0
+	ldy ry
+	beq getec
+	lda #$00
+	sta (pcrsr),Y
+	lda #63		;$3F
+	dey
+	sta (pcrsr),Y
+	dec ry
+	jmp getec
+c0
+	cmp #155	;$9B
+	beq c2
+	jsr ascint
+	ldy ry
+	sta (pcrsr),Y
+	cpy #20		;#14
+	beq c1
+	inc ry
+c1
+	jmp getec
+c2
+	jsr CLOSE
+	lda #$00
+	sta $021A
+	ldy ry
+	sta (pcrsr),Y
+	rts
 
 
 
@@ -300,15 +433,55 @@ start
     stx pcrsr
     sty pcrsr+1
     jsr rutlee
-;ingresamos la fuente 01
-
 ;ingresamos el titulo 02
+    ldx #<shtit02
+    ldy #>shtit02
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
+;ingresamos la fuente 01
+    jsr ingresofuente
+;cargamos el primer archivo
 
-;ingresamos la fuente 02
+;validamos si queremos otro archivo
 
 ;ingresamos el titulo 03
+    ldx #<shtit03
+    ldy #>shtit03
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
+;ingresamos el titulo 04
+    ldx #<shtit04
+    ldy #>shtit04
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
+;ingresamos la fuente 02
+    jsr ingresofuente
+;cargamos el segundo archivo
 
+;validamos si queremos otro archivo
+
+;ingresamos el titulo 05
+    ldx #<shtit05
+    ldy #>shtit05
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
+;ingresamos el titulo 06
+    ldx #<shtit06
+    ldy #>shtit06
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
 ;ingresamos la fuente 03
+    jsr ingresofuente
+;cargamos el tercer archivo
+
+;terminamos las cargas de archivos y procedemos a grabar en cinta
+
+
 
 
 
