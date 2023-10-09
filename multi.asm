@@ -33,6 +33,16 @@ dls
 :21    .BY $02
     .by $41
     .wo dls
+;************************************************
+; DEFINICION DEL DISPLAY
+; PARA DIRECTORIO
+;************************************************
+?dir
+	.by $70,$70,$70,$46
+	.wo ???dir
+	.by $70,$02,$02,$02,$02,$02,$02,$02
+	.by $02,$02,$41
+	.wo ?dir
 show
     .sb " "
     .sb +128,"dogdark"
@@ -103,6 +113,13 @@ shblockes03
 shbank03
     .sb "**           |"
     .sb +32,"ZRXRRRRRRRRXRRRRRRRRRXRRRRRRRRRRRRRRRRRC"
+;************************************************
+;VALORES PARA PANTALLA DIRECTORIO
+;************************************************
+???DIR
+	.sb "     DIRECTORIO     "
+??DIR
+:10	.sb "                                        "
 datash
     .by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ;1er byte controla sistema de velocidad
@@ -127,6 +144,14 @@ veoaudiooff
 
 ry 
     .by 0,0,0
+len
+    .by 0,0,0
+?fuente
+    .by '                    '
+all
+	.by 'D:*.*',$9B
+banca
+    .by 0,0
 ;   
 ;funcion para regular la velocidad
 ;
@@ -281,7 +306,49 @@ sub32
 	sbc #32
 remain
 	rts
-
+;************************************************
+;GENERA UNA LIMPIEZA TOTAL DEL DISPLAY DEL
+;DIRECTORIO
+;************************************************
+cls
+	ldx # <??dir
+	ldy # >??dir
+	stx pcrsr
+	sty pcrsr+1
+	ldy #$00
+	ldx #$00
+?cls
+	lda #$00
+	sta (pcrsr),Y
+	iny
+	bne ??cls
+	inx
+	inc pcrsr+1
+??cls
+	cpy #104	;$68
+	bne ?cls
+	cpx #$01
+	bne ?cls
+	rts
+;************************************************
+;funcion que abre los perifericos
+;************************************************
+OPEN
+	ldx #$10
+	lda #$03
+	sta $0342,X
+	lda # <?fuente
+	sta $0344,X
+	lda # >?fuente
+	sta $0345,X
+	lda #$04
+	sta $034A,X
+	lda #$80
+	sta $034B,X
+	jsr $E456
+	dey
+	bne dir
+	rts
 
 ;************************************************
 ;funcion para cerrar perfiericos
@@ -292,10 +359,89 @@ close
 	sta $0342,X
 	jmp $E456
 ;************************************************
-;MUESTRA EL DIRECTORIO EN PANTALLA
+;muestra el directorio en pantalla
 ;************************************************
-
-
+dir
+	jsr close
+	jsr cls
+	ldx # <?dir
+	ldy # >?dir
+	stx $0230
+	sty $0231
+	ldx # <??dir
+	ldy # >??dir
+	stx pcrsr
+	sty pcrsr+1
+	
+;	
+	ldx #$10
+	lda #$03
+	sta $0342,X
+	lda # <all
+	sta $0344,X
+	lda # >all
+	sta $0345,X
+	lda #$06
+	sta $034A,X
+	lda #$00
+	sta $034B,X
+	jsr $E456
+	lda #$07
+	sta $0342,X
+	lda #$00
+	sta $0348,X
+	sta $0349,X
+	sta ry
+	sta ry+1
+ledir
+	jsr $E456
+	bmi ?exit
+	cmp #155
+	beq exit
+	jsr ascint
+	ldy ry
+	sta (pcrsr),Y
+	inc ry
+	bne f0
+	inc pcrsr+1
+	inc ry+1
+f0
+	ldy ry+1
+	cpy #$01
+	bne f1
+	ldy ry
+	cpy #104	;$68
+	bcc F1
+	jsr pause 
+	inc ry
+f1
+	jmp ledir
+exit
+	inc ry
+	inc ry
+    inc ry
+	jmp ledir
+?exit
+	jsr close
+	jsr pause
+	jsr cls
+	pla
+	pla
+	jmp start
+pause
+	lda 53279
+	cmp #$06
+	bne pause
+	jsr cls
+	lda #$00
+	sta ry
+	sta ry+1
+	lda # <??dir
+	sta pcrsr
+	lda # >??dir
+	sta pcrsr+1
+	ldx #$10
+	rts
 ;*************************************************
 ;rutina que nos permite poder ingresar informacion
 ;a un campo especifico ya antes declarado
@@ -371,15 +517,51 @@ c0
 c1
 	jmp getec
 c2
-	jsr CLOSE
+	jsr close
 	lda #$00
 	sta $021A
 	ldy ry
 	sta (pcrsr),Y
 	rts
-
-
-
+fget
+    lda #$00
+    sta len
+    sta len+1
+    sta len+2
+    sta banca
+    sta banca+1
+    rts
+;carga de archivos a memoria
+cargofuente
+    ldy #$19
+conv 
+    lda fuente,y 
+    beq ?remain
+    and #$7f 
+    cmp #64
+    bcc add32
+    cmp #96
+    bcc sub64
+    bcs ?remain
+add32
+    clc
+    adc #32
+    bcc oklet
+sub64
+    sec
+    sbc #64
+?remain
+    lda #$9B
+oklet
+    sta ?fuente,y 
+    dey
+    bpl conv
+;abro prefierico
+    jsr open
+;cargo data a memoria
+    jsr fget
+    jsr close
+    rts
 
 ;
 ;video inverso para datos de archivos
@@ -442,7 +624,7 @@ start
 ;ingresamos la fuente 01
     jsr ingresofuente
 ;cargamos el primer archivo
-
+    jsr cargofuente
 ;validamos si queremos otro archivo
 
 ;ingresamos el titulo 03
@@ -460,7 +642,7 @@ start
 ;ingresamos la fuente 02
     jsr ingresofuente
 ;cargamos el segundo archivo
-
+    jsr cargofuente
 ;validamos si queremos otro archivo
 
 ;ingresamos el titulo 05
@@ -478,7 +660,7 @@ start
 ;ingresamos la fuente 03
     jsr ingresofuente
 ;cargamos el tercer archivo
-
+    jsr cargofuente
 ;terminamos las cargas de archivos y procedemos a grabar en cinta
 
 
