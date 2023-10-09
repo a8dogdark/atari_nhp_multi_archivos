@@ -103,7 +103,7 @@ sistema
 veonhp
     .sb "NHP  "
 veonhp8
-    .sb "NHP 8"
+    .sb "NHP8 "
 veostac
     .sb "STAC "
 veoultra
@@ -210,17 +210,15 @@ noinverso
 ;fsk
 ;
 fsk
+    ldx #$08
+fsk2
+    lda data01fsk,x
+    sta $d200,x
+    dex
+    bpl fsk2
     rts
 data01fsk
     .by $05,$a0,$07,$a0,$05,$a0,$07,$a0,$00
-
-
-
-
-
-
-
-
 dos
     jmp ($0c)
 @start
@@ -242,6 +240,17 @@ start
     jsr setvbv  
     jsr reseter
 
+;ingresamos el titulo 01
+
+;ingresamos la fuente 01
+
+;ingresamos el titulo 02
+
+;ingresamos la fuente 02
+
+;ingresamos el titulo 03
+
+;ingresamos la fuente 03
 
 
 
