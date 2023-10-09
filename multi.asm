@@ -1,10 +1,6 @@
     icl 'base/sys_equates.m65'
     icl 'base/sys_macros.m65'
-    org $2000
-    icl 'base/romram.asm'
-    icl 'base/loader.asm'
-    icl 'base/pagina7.asm'
-    icl 'base/pagina4.asm'
+
 ;
 ;valores principales que regula los baudios
 ;
@@ -13,6 +9,20 @@ b00800 = $0458  ;timer a  800 bps
 b00990 = $0380  ;timer a  991 bps
 b01150 = $0303  ;timer a 1150 bps
 b01400 = $0278  ;timer a 1400 bps
+pcrsr = $cb 
+
+
+
+    org $2000
+    icl 'base/romram.asm'
+    icl 'base/loader.asm'
+    icl 'base/pagina7.asm'
+    icl 'base/pagina4.asm'
+    icl 'base/mem256k.asm'
+    icl 'base/hexascii.asm'
+    
+    
+
 ;
 ;display list principal
 dls
@@ -190,9 +200,53 @@ reseter04
     sta shbank02+1
     sta shbank03
     sta shbank03+1
-
-
+;obtenemos los bancoy memoria disponible
+    jsr limpioval
+    jsr memoria
+;mostramos la cantidad de bancos disponibles
+    jsr limpioval
+    lda bankos
+    sta val
+    jsr bin2bcd
+    lda resatascii+7
+    sta shbancos+1
+    lda resatascii+6
+    sta shbancos
+;mostramos los bytes disponibles de memoria
+    jsr limpioval
+    lda memory
+    sta val
+    lda memory+1
+    sta val+1
+    lda memory+2
+    sta val+2
+    jsr bin2bcd
+    ldx #7
+    ldy #5
+reseter05
+    lda resatascii,x 
+    sta shmemo,y 
+    dex
+    dey
+    bpl reseter05
+    jsr baud.600
+    ldx #$ff
+    stx $d301
     rts
+
+
+;
+;funcion que cierra perifericos
+;
+close
+    ldx #$10
+    lda #$0c
+    sta $0342,x
+    jmp $e456
+
+
+
+
 
 ;
 ;video inverso para datos de archivos
@@ -238,10 +292,14 @@ start
     ldx #>VBI
     lda #$07    ;diferida
     jsr setvbv  
-    jsr reseter
+    
 
 ;ingresamos el titulo 01
-
+    ldx #<shtit01
+    ldy #>shtit01
+    stx pcrsr
+    sty pcrsr+1
+    jsr rutlee
 ;ingresamos la fuente 01
 
 ;ingresamos el titulo 02
@@ -257,6 +315,7 @@ start
     ;jsr inverso
     jmp *
 inicio
+    jsr close
     jsr kem
     ldx #<@start
     ldy #>@start
@@ -272,6 +331,7 @@ inicio
     stx sistema
     stx sistema+1
     stx sistema+2
+    jsr reseter
     jmp start
 ;rutina tecla option para cambiar el sistema
 .proc VBI
