@@ -1,6 +1,16 @@
     ICL 'SYSEQU.M65'
 PCRSR   = $CB
-BUFER   = $4000
+BAFER   = $4000
+LENGHT  = $4000
+;************************************************
+;VALORES PRINCIPALES QUE REGULA LOS BAUDIOS
+;************************************************
+B00600 	= $05CC		;TIMER  600 BPS
+B00800 	= $0458  	;TIMER  800 BPS
+B00990 	= $0380  	;TIMER  991 BPS
+B01150 	= $0303  	;TIMER 1150 BPS
+B01400	= $0278		;TIMER 1400 BPS
+;************************************************
     ORG $2000
     ICL 'ROMRAM.ASM'
     ICL 'HEXASCII.ASM'
@@ -381,6 +391,44 @@ ESSTART02
 ;FUNCIONES DEL SISTEMA
 ;************************************************
 ;
+;************************************************
+;FUNCION PARA REGULAR LA VELOCIDAD AL GRABAR
+;************************************************
+;
+BAUD.600
+	LDA # <B00600
+	JSR BAUD.M1
+	LDA # >B00600
+	JMP BAUD.M2
+BAUD.800
+	LDA # <B00800
+	JSR BAUD.M1
+	LDA # >B00800
+	JMP BAUD.M2
+BAUD.990
+	LDA # <B00990
+	JSR BAUD.M1
+	LDA # >B00990
+	JMP BAUD.M2
+BAUD.1150
+	LDA # <B01150
+	JSR BAUD.M1
+	LDA # >B01150
+	JMP BAUD.M2
+BAUD.1400
+	LDA # <B01400
+	JSR BAUD.M1
+	LDA # >B01400
+BAUD.M2
+	STA $EBA8
+	STA $FD46
+	STA $FCE1
+	RTS
+BAUD.M1
+	STA $EBA3
+	STA $FD41
+	STA $FCDC
+	RTS
 ;
 ;************************************************
 ;FUNCION QUE NOS PERMITE PODER CONVERTIR UN BYTE
@@ -580,18 +628,51 @@ FGET
     LDA B
     STA (PUNTERO),Y
     INY
-    LDA #<BUFER
+    LDA #<BAFER
     STA (PUNTERO),Y
     INY
-    LDA #>BUFER
+    LDA #>BAFER
     STA (PUNTERO),Y
-
-
-
-
-
-    
-
+LOPFGET
+	JSR CAMBIOBANCO	;REALIZO CAMBIO DE BANCO
+	LDX #$10
+	LDA #$07
+	STA $0342,X
+	LDA # <BAFER	;SE CARGA EN $4000
+	STA $0344,X
+	LDA # >BAFER
+	STA $0345,X
+	LDA # <LENGHT	;CANTIDAD DE BYTES QUE SE CARGAN
+	STA $0348,X
+	LDA # >LENGHT
+	STA $0349,X
+??FGET
+    JSR $E456
+;************************************************
+;REALIZO SUMA DE BYTES POR BANCO Y LO GUARDO EN
+;LA VARIABLE VOLATIL LEN
+;************************************************
+	CLC
+	LDA LEN
+	ADC $0348,X
+	STA LEN
+	LDA LEN+1
+	ADC $0349,X
+	STA LEN+1
+	LDA LEN+2
+	ADC #$00
+	STA LEN+2
+	LDA $0349,X
+	CMP # >LENGHT
+	BEQ LOPFGET
+	CPY #136	;$88
+	BEQ ?FGET
+	JSR CLOSE
+	JSR CLS
+	LDX #$00
+	TXS
+	JMP START
+?FGET
 ;CARGAMOS LOS DATOS
 ;01 BYTE CONTROLA PORTB DE INICIO
 ;01 BYTE NUMERO DE ARCHIVO CARGADO
