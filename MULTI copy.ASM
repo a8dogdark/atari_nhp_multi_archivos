@@ -1,0 +1,692 @@
+    ICL 'SYSEQU.M65'
+PCRSR   = $CB
+BAFER   = $4000
+LENGHT  = $4000
+    ORG $2000
+    ICL 'FUNCIONES.ASM'
+    ICL 'HEXASCII.ASM'
+    ICL 'LOADER.ASM'
+    ICL 'MEM256K.ASM'
+    ICL 'PAGINA4.ASM'
+    ICL 'PAGINA7.ASM'
+    ICL 'ROMRAM.ASM'
+BANCA   
+    .BYTE 0,0
+BLOCK
+    .BYTE 0,0
+CONT 
+    .BYTE 0,0
+;*************************
+;MENU PRINCIPAL
+;*************************
+DLSPRINCIPAL
+:3  .BYTE $70
+    .BYTE $46
+    .WORD SHOWPRINCIPAL
+    .BYTE $70
+:17  .BYTE $02
+    .BYTE $41
+    .WORD DLSPRINCIPAL
+SHOWPRINCIPAL
+    .SB " "
+    .SB +128,"dogdark"
+    .SB "  softwares "
+    .SB +32,"QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRE"
+    .SB "|"
+    .SB +128,"COPIADOR MULTIARCHIVOS ULTRA 2023 V3.1"
+    .SB "|"
+    .SB +32,"ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRD"
+    .SB "|                                      |"
+    .SB "| MEMORIA DISPONIBLE           "
+VEOMEMORIADISPONIBLE
+    .SB "******* |"
+    .SB "| BANCOS DISPONIBLES                "
+VEOBANCOSDISPONIBLES
+    .SB "** |"
+    .SB "| ARCHIVOS A GRABAR (MAX 3)          "
+VEOARCHIVOSAGRABAR
+    .SB "* |"
+    .SB "| "
+    .SB +128,"B"
+    .SB "YTES POR BLOQUE                 *** |"
+    .SB "| V"
+    .SB +128,"E"
+    .SB "LOCIDAD DE GRABACION         ***** |"
+    .SB "| GR"
+    .SB +128,"A"
+    .SB "BACION CON AUDIO              *** |"
+    .SB "|                                      |"
+    .SB +32,"ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRD"
+    .SB "|                                      |"
+    .SB "| "
+    .SB +128,"C"
+    .SB "ARGAR ARCHIVO        "
+    .SB +128,"G"
+    .SB "RABAR ARCHIVO |"
+    .SB "| "
+    .SB +128,"D"
+    .SB "IRECTORIO            "
+    .SB +128,"V"
+    .SB "ER ARCHIVOS   |"
+    .SB "|                                      |"
+    .SB +32,"ZRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRC"
+
+DLSMENUCARGADEARCHIVOS
+:3  .BYTE $70
+    .BYTE $46
+    .WORD SHOWMENUCARGADEARCHIVOS
+    .BYTE $70
+:12 .BYTE $02
+    .BYTE $70
+    .BYTE $06,$70,$06
+    .BYTE $70
+    .BYTE $02
+    .BYTE $41
+    .WORD DLSMENUCARGADEARCHIVOS
+SHOWMENUCARGADEARCHIVOS
+    .SB " "
+    .SB +128,"dogdark"
+    .SB "  softwares "
+    .SB +32,"QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRE"
+    .SB "|"
+    .SB +128,"          CARGA DE ARCHIVOS           "
+    .SB "|"
+    .SB +32,"ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRD"
+    .SB "|                                      |"
+    .SB "| ARCHIVO NUMERO # "
+MUESTRONUMERODEARCHIVO
+    .SB "*                   |"
+    .SB "| TITULO 01 "
+TITULO01
+    .SB "********************       |"
+    .SB "| TITULO 02 "
+TITULO02
+    .SB "********************       |"
+    .SB "| FUENTE    "
+FUENTE
+    .SB "********************       |"
+    .SB "| BYTES     "
+BYTES
+    .SB "******                     |"
+    .SB "| BLOQUES   "
+BLOQUES
+    .SB "****                       |"
+    .SB "|                                      |"
+    .SB +32,"ZRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRC"
+TITULOGRANDE01
+    .SB "--ACA VA EL TITULO--"
+TITULOGRANDE02
+    .SB "--ACA VA EL TITULO--"
+MENSAJECARGA
+    .SB "MENSAJE*********************************"
+
+DLSMENUGRABACIONDEARCHIVOS
+:3  .BYTE $70
+    .BYTE $46
+    .WORD SHOWMENUGRABACIONDEARCHIVOS
+    .BYTE $70
+:3  .BYTE $02
+    .BYTE $41
+    .WORD DLSMENUGRABACIONDEARCHIVOS
+SHOWMENUGRABACIONDEARCHIVOS
+    .SB " "
+    .SB +128,"dogdark"
+    .SB "  softwares "
+    .SB +32,"QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRE"
+    .SB "|"
+    .SB +128,"        GRABACION DE ARCHIVOS         "
+    .SB "|"
+    .SB +32,"ARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRD"
+
+DLSDIRECTORIO
+:3  .BYTE $70
+    .BYTE $46
+    .WORD SHOWDIRECTORIO
+    .BYTE $70
+:3  .BYTE $02
+    .BYTE $70,$70
+:10 .BYTE $02
+    .BYTE $70,$70
+    .BYTE $02
+    .BYTE $41
+    .WORD DLSDIRECTORIO
+SHOWDIRECTORIO
+    .SB " "
+    .SB +128,"dogdark"
+    .SB "  softwares "
+    .SB +32,"QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRE"
+    .SB "|"
+    .SB +128,"        DIRECTORIO DE ARCHIVOS        "
+    .SB "|"
+    .SB +32,"ZRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRC"
+
+??DIR
+:10	.SB "                                        "
+
+    .SB "    PRESIONE "
+    .SB +128," START "
+    .SB " PARA CONTINUAR.    "
+
+DLSVERARCHIVOS
+:3  .BYTE $70
+    .BYTE $46
+    .WORD SHOWVERARCHIVOS
+    .BYTE $70
+:3  .BYTE $02
+    .BYTE $70
+    .BYTE $02
+    .BYTE $41
+    .WORD DLSVERARCHIVOS
+SHOWVERARCHIVOS
+    .SB " "
+    .SB +128,"dogdark"
+    .SB "  softwares "
+    .SB +32,"QRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRE"
+    .SB "|"
+    .SB +128,"     ARCHIVOS CARGADOS EN MEMORIA     "
+    .SB "|"
+    .SB +32,"ZRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRC"
+
+    .SB "| DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD  |"
+    
+
+
+
+
+;***************************************************
+;MENU PRINCIPAL
+;***************************************************
+MENUPRINCIPAL
+    LDX #<DLSPRINCIPAL
+    LDY #>DLSPRINCIPAL
+    STX $230
+    STY $231
+    LDA #$02
+    STA 710
+    STA 712
+    JSR OPENK
+TECLAMENUPRINCIPAL
+    JSR $E456
+    CMP #$41    ;ES LETRA A GRABACION CON AUDIO
+    CMP #$42    ;ES LETRA B BYTES POR BLOQUE
+    CMP #$43    ;ES LETRA C CARGA DE ARCHIVO
+    BEQ ESLETRAC
+    CMP #$44    ;ES LETRA D DIRECTORIO DE ARCHIVOS
+    BEQ ESLETRAD
+    CMP #$45    ;ES LETRA E VELOCIDAD DE GRABACION
+    CMP #$47    ;ES LETRA G GRABAR ARCHIVO
+    BEQ ESLETRAG
+    CMP #$56    ;ES LETRA V VER ARCHIVOS
+    BEQ ESLETRAV
+    JMP TECLAMENUPRINCIPAL
+ESLETRAA
+
+ESLETRAB
+
+ESLETRAC
+    JMP MENUCARGADEARCHIVOS
+ESLETRAD
+    JMP DIRECTORIODEARCHIVOS
+ESLETRAE
+
+ESLETRAG
+    JMP MENUGRABACIONDEARCHIVOS
+ESLETRAV
+    JMP VERARCHIVOS
+    JMP *
+
+
+
+
+
+;********************************
+;MENU DE CARGA DE ARCHIVOS
+;********************************
+?FUENTE
+	.BYTE '                    '
+
+MENUCARGADEARCHIVOS
+    LDX #<DLSMENUCARGADEARCHIVOS
+    LDY #>DLSMENUCARGADEARCHIVOS
+    STX $230
+    STY $231
+    LDA #$02
+    STA 710
+    STA 712
+    JSR LIMPIOCARGAARCHIVOS
+    LDX ARCHIVOSAGRABAR
+    INX
+    STX RY
+    JSR LIMPIOVAL
+    LDA RY
+    STA VAL
+    JSR BIN2BCD
+    LDA RESATASCII+7
+    STA MUESTRONUMERODEARCHIVO
+;INGRESAMOS EL PRIMER TITULO
+    LDX #<TITULO01
+    LDY #>TITULO01
+    STX PCRSR
+    STY PCRSR+1
+    JSR RUTLEE
+    TYA
+	BEQ NOTITLE
+	LSR 
+	STA RY+1
+	LDA #10
+	SEC
+	SBC RY+1
+	STA RY+1
+	LDX #$00
+	LDY RY+1
+WRITE
+;************************************************
+;AGREGO EL TITULO 01 AL LOADER
+;************************************************
+	LDA TITULO01,X
+	STA TITULOGRANDE01,Y
+	INY
+	INX
+	CPX RY
+	BNE WRITE
+NOTITLE
+;INGRESAMOS EL SEGUNDO TITULO
+    LDX #<TITULO02
+    LDY #>TITULO02
+    STX PCRSR
+    STY PCRSR+1
+    JSR RUTLEE
+    TYA
+	BEQ NOTITLE02
+	LSR 
+	STA RY+1
+	LDA #10
+	SEC
+	SBC RY+1
+	STA RY+1
+	LDX #$00
+	LDY RY+1
+WRITE02
+;************************************************
+;AGREGO EL TITULO 01 AL LOADER
+;************************************************
+	LDA TITULO02,X
+	STA TITULOGRANDE02,Y
+	INY
+	INX
+	CPX RY
+	BNE WRITE02
+NOTITLE02
+;INGRESAMOS LA FUENTE
+    LDX #<FUENTE
+    LDY #>FUENTE
+    STX PCRSR
+    STY PCRSR+1
+    JSR RUTLEE
+    LDY RY
+	CPY #1
+	BEQ OPENPER
+	LDY #19
+CONV
+	LDA FUENTE,Y
+	BEQ ?REMAIN
+	AND #$7F
+	CMP #64
+	BCC ADD32
+	CMP #96
+	BCC SUB64
+	BCS ?REMAIN
+ADD32
+	CLC
+	ADC #32
+	BCC OKLET
+SUB64
+	SEC
+	SBC #64
+?REMAIN
+	LDA #$9B
+OKLET
+	STA ?FUENTE,Y
+	DEY
+	BPL CONV
+;REALIZAMOS LA CARGA A MEMORIA
+OPENPER
+    JSR OPEN
+    JSR FGET
+    JSR CLOSE
+;CARGAMOS LOS DATOS A SUB DATOS
+    LDX ARCHIVOSAGRABAR
+    CPX #1
+    BEQ CARGODATA01
+    CPX #2
+    BEQ CARGODATA02
+
+CARGODATA01
+    STX DATAARCHIVO01
+    LDX #19
+CARGODATA01B
+    LDA TITULOGRANDE01,X
+    STA DATAARCHIVO01+1,X
+    DEX
+    BPL CARGODATA01B
+    JMP FINCARGAR
+CARGODATA02
+
+CARGODATA03
+
+FINCARGAR
+    JSR ESSTART
+    JMP START
+FGET
+    LDA #$00
+    STA LEN
+    STA LEN+1
+    STA LEN+2
+LOPFGET
+    JSR CAMBIOBANCO
+    LDX #$10
+	LDA #$07
+	STA $0342,X
+	LDA # <BAFER	;SE CARGA EN $4000
+	STA $0344,X
+	LDA # >BAFER
+	STA $0345,X
+	LDA # <LENGHT	;CANTIDAD DE BYTES QUE SE CARGAN
+	STA $0348,X
+	LDA # >LENGHT
+	STA $0349,X
+??FGET
+	JSR $E456
+;************************************************
+;REALIZO SUMA DE BYTES POR BANCO Y LO GUARDO EN
+;LA VARIABLE VOLATIL LEN
+;************************************************
+	CLC
+	LDA LEN
+	ADC $0348,X
+	STA LEN
+	LDA LEN+1
+	ADC $0349,X
+	STA LEN+1
+	LDA LEN+2
+	ADC #$00
+	STA LEN+2
+	LDA $0349,X
+	CMP # >LENGHT
+	BEQ LOPFGET
+	CPY #136	;$88
+	BEQ ?FGET
+	JSR CLOSE
+	JSR CLS
+	LDX #$00
+	TXS
+	JMP START
+?FGET
+    JSR LIMPIOVAL
+    LDA LEN
+    STA VAL
+    LDA LEN+1
+    STA VAL+1
+    LDA LEN+2
+    STA VAL+2
+    JSR BIN2BCD
+    LDX #7
+    LDY #5
+PONBYTES
+    LDA RESATASCII,X
+    STA BYTES,Y
+    DEX
+    DEY
+    BPL PONBYTES
+;
+    LDA LEN
+    STA RY
+    LDA LEN+1
+    STA RY+1
+    LDA LEN+2
+    STA RY+2
+PONBLOQUES
+    SEC
+    LDA RY
+    SBC #252
+    STA RY
+    STA CONT+1
+
+    LDA RY+1
+	SBC #0
+	STA RY+1
+	
+	LDA RY+2
+	SBC #0
+	STA RY+2
+
+;SUMO BLOQUES   
+    CLC
+	LDA BLOCK
+	ADC #$01
+	STA BLOCK
+	LDA BLOCK+1
+	ADC #$00
+	STA BLOCK+1
+;
+	LDA RY+2
+	CMP #$00
+	BNE PONBLOQUES
+	LDA RY+1
+	CMP #$00
+	BNE PONBLOQUES
+	CLC
+	LDA BLOCK
+	ADC #$01
+	STA BLOCK
+	LDA BLOCK+1
+	ADC #$00
+	STA BLOCK+1
+	JSR LIMPIOVAL
+	LDA BLOCK
+	STA VAL
+	LDA BLOCK+1
+	STA VAL+1
+	JSR BIN2BCD
+	LDX #7
+	LDY #3
+PONBLOQUES2
+	LDA RESATASCII,X
+	STA BLOQUES,Y
+	;STA BLQ,Y
+	;STA BAKBLQ,Y
+	DEX
+	DEY
+	BPL PONBLOQUES2
+	RTS
+DATAARCHIVO01
+    .BYTE '                                              '
+DATAARCHIVO02
+    .BYTE '                                              '
+DATAARCHIVO03
+    .BYTE '                                              '
+;************************************************
+;FUNCION QUE PERMITE PODER REALIZAR CAMBIOS
+;DE BANCOS DE MEMORIA EN UNA CARGA
+;************************************************
+CAMBIOBANCO
+	LDX BANCA
+	LDA B,X
+	STA $D301
+	STA BANCA+1
+	CPX BANKOS
+	BEQ ERRORBANQUEO
+	INX
+	STX BANCA
+	RTS
+;************************************************
+;EN CASO QUE SOBREPASE LA CANTIDAD DE BANCOS
+;ENCONTRADOS NOS REDIRECCIONA A MOSTRAR EL
+;DIRECTORIO EN PANTALLA
+;************************************************
+ERRORBANQUEO
+	JMP DIRECTORIODEARCHIVOS
+;********************************
+;MENU GRABACION DE ARCHIVOS
+;********************************
+
+
+
+MENUGRABACIONDEARCHIVOS
+    LDX #<DLSMENUGRABACIONDEARCHIVOS
+    LDY #>DLSMENUGRABACIONDEARCHIVOS
+    STX $230
+    STY $231
+    LDX #$02
+    STX 710
+    STX 712
+
+    JSR ESSTART
+    JMP START
+
+
+;********************************
+;DIRECTORIO ARCHIVOS
+;********************************
+ALL
+	.BYTE 'D:*.*',$9B
+
+
+
+DIRECTORIODEARCHIVOS
+    JSR CLOSE
+    JSR CLS
+    LDX #<DLSDIRECTORIO
+    LDY #>DLSDIRECTORIO
+    STX $230
+    STY $231
+    LDX #$02
+    STX 710
+    STX 712
+
+    LDX # <??DIR
+	LDY # >??DIR
+	STX PCRSR
+	STY PCRSR+1
+;
+    LDX #$10
+	LDA #$03
+	STA $0342,X
+	LDA # <ALL
+	STA $0344,X
+	LDA # >ALL
+	STA $0345,X
+	LDA #$06
+	STA $034A,X
+	LDA #$00
+	STA $034B,X
+	JSR $E456
+	LDA #$07
+	STA $0342,X
+	LDA #$00
+	STA $0348,X
+	STA $0349,X
+	STA RY
+	STA RY+1
+;
+LEDIR
+	JSR $E456
+	BMI ?EXIT
+	CMP #155
+	BEQ EXIT
+	JSR ASCINT
+	LDY RY
+	STA (PCRSR),Y
+	INC RY
+	BNE F0
+	INC PCRSR+1
+	INC RY+1
+F0
+	LDY RY+1
+	CPY #$01
+	BNE F1
+	LDY RY
+	CPY #104	;$68
+	BCC F1
+	JSR PAUSE
+	INC RY
+F1
+	JMP LEDIR
+EXIT
+	INC RY
+	INC RY
+	INC RY
+	JMP LEDIR
+?EXIT
+	JSR CLOSE
+	JSR PAUSE
+	JSR CLS
+	PLA
+	PLA
+	JMP START
+PAUSE
+	LDA 53279
+	CMP #$06
+	BNE PAUSE
+	JSR CLS
+	LDA #$00
+	STA RY
+	STA RY+1
+	LDA # <??DIR
+	STA PCRSR
+	LDA # >??DIR
+	STA PCRSR+1
+	LDX #$10
+	RTS
+
+;********************************
+;VER ARCHIVOS
+;********************************
+
+
+VERARCHIVOS
+    LDX #<DLSVERARCHIVOS
+    LDY #>DLSVERARCHIVOS
+    STX $230
+    STY $231
+
+    LDX #$02
+    STX 710
+    STX 712
+
+    JSR ESSTART
+    JMP START
+;************************************************
+;DISPLAY DE INICIO DEL PROGRAMA Y FUNCIONALIDAD
+;DIRECTA A TODAS SUS FUNCIONES
+;************************************************
+DOS
+	JMP ($0C)
+@START
+	JSR DOS
+START
+    JMP MENUPRINCIPAL
+INICIO
+    JSR CLOSE
+	JSR ROMRAM			;COPIO LA ROM A LA RAM
+	LDX # <@START
+	LDY # >@START
+	LDA #$03
+	STX $02
+	STY $03
+	STA $09
+	LDY #$FF
+	STY $08
+	INY   
+	STY $0244
+    JSR LIMPIODATOS
+    LDX #$FF
+    STX VELOCIDADDEGRABACION
+    LDX #$00
+    STX BANCA
+    STX BANCA+1
+    LDX #$01
+    STX BYTESPORBLOQUES
+    STX GRABACIONCONAUDIO
+    JMP START
+    RUN INICIO
