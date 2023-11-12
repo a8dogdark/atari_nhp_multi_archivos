@@ -128,8 +128,6 @@ HOLDCH      = $007C
 INSDAT      = $007D
 COUNTR      = $007E
 LOMEM       = $0080
-PUNTERO     = $0090
-MOMENTANEO  = $0096
 ; 
 ; PAGE 2
 ; 
