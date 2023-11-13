@@ -520,7 +520,7 @@ Source: ROMRAM.ASM
      3 												;
      4 = B000											KEMBUFFER =$B000
      5 												ROMRAM
-     6 FFFF> 2000-2EE7> A0 00										LDY #$00
+     6 FFFF> 2000-2F08> A0 00										LDY #$00
      7 2002												KEMLOOP1
      8 2002 B9 00 E0											LDA $e000,y
      9 2005 99 00 B0											STA KEMBUFFER,y
@@ -1637,62 +1637,91 @@ Source: PAGINA4.ASM
    823 2EA1 AE EF 29											LDX BANCA
    824 2EA4 BD A7 21											LDA B,X
    825 2EA7 91 90												STA (PUNTERO),Y
-   826
-   827
-   828
-   829
-   830
+   826 												;************************************************
+   827 												;ABRO PERIFERICO
+   828 												;************************************************
+   829 2EA9												OPENPER
+   830 2EA9 20 57 2A											JSR OPEN
    831 												;************************************************
-   832 												;ABRO PERIFERICO
+   832 												;CARGO DATA A MEMORIA
    833 												;************************************************
-   834 2EA9												OPENPER
-   835 2EA9 20 57 2A											JSR OPEN
-   836 												;************************************************
-   837 												;CARGO DATA A MEMORIA
-   838 												;************************************************
-   839 2EAC 20 C3 2C											JSR FGET
-   840 												;************************************************
-   841 												;CIERRO PERIFERICO
-   842 												;************************************************
-   843 2EAF 20 79 2A											JSR CLOSE
-   844 2EB2 A2 27												LDX #39
-   845 2EB4												FINCARGA
-   846 2EB4 BD F1 29											LDA MENSAJESTART,X
-   847 2EB7 9D 4B 27											STA MENSAJECARGA,X
-   848 2EBA CA												DEX
-   849 2EBB 10 F7												BPL FINCARGA
-   850 2EBD 20 B4 2C											JSR SERASTART
-   851 													
-   852
+   834 2EAC 20 C3 2C											JSR FGET
+   835 												;************************************************
+   836 												;CIERRO PERIFERICO
+   837 												;************************************************
+   838 2EAF 20 79 2A											JSR CLOSE
+   839 												;AGREGAMOS LOS BYTES Y BUFFER A LA DATA
+   840 												;AGREGAMOS LOS BYTES CARGADOS
+   841 2EB2 AD D2 29											LDA LEN
+   842 2EB5 91 90												STA (PUNTERO),Y
+   843 2EB7 C8												INY
+   844 2EB8 AD D3 29											LDA LEN+1
+   845 2EBB 91 90												STA (PUNTERO),Y
+   846 2EBD C8												INY
+   847 2EBE AD D4 29											LDA LEN+2
+   848 2EC1 91 90												STA (PUNTERO),Y
+   849 2EC3 C8												INY
+   850 												;CALCULAMOS EL BUFFER
+   851
+   852 												;AGREGAMOS EL NUEVO BUFER
    853
-   854 												;MENSAJE PRESIONE START
+   854 												;AGREGAMOS EL BUFER A LA DATA
    855
-   856
-   857 2EC0 A9 40												LDA #$40
-   858 2EC2 8D C6 02											STA 710
-   859 2EC5 4C C5 2E											JMP *
-   860 												;01 BYTE PORTB
-   861 												;02 BYTE BUFER
-   862 												;02 BYTE LENGHT
-   863 												;03 BYTE TOTAL DE BYTES CARGADOS
-   864 												;02 BYTE TOTAL DE BLOQUES
-   865 												;20 BYTE TITULO GRANDE 01
-   866 												;20 BYTE TITULO GRANDE 02
-   867 												;50 TOTAL DE BYTES
-   868
-   869 2EC8												INICIO
-   870 2EC8 20 79 2A										    JSR CLOSE
-   871 2ECB 20 00 20											JSR ROMRAM			;COPIO LA ROM A LA RAM
-   872 2ECE A2 C7												LDX # <@START
-   873 2ED0 A0 2C												LDY # >@START
-   874 2ED2 A9 03												LDA #$03
-   875 2ED4 86 02												STX $02
-   876 2ED6 84 03												STY $03
-   877 2ED8 85 09												STA $09
-   878 2EDA A0 FF												LDY #$FF
-   879 2EDC 84 08												STY $08
-   880 2EDE C8												INY   
-   881 2EDF 8C 44 02											STY $0244
-   882 2EE2 20 92 2C										    JSR RESETER
-   883 2EE5 4C CA 2C										    JMP START
-   884 02E0-02E1> C8 2E										    RUN INICIO
+   856 												;CALCULAMOS EL LENGHT
+   857
+   858 												;AGREGAMOS EL NUEBO LENGHT
+   859
+   860 												;AGREGAMOS EL LENGHT A LA DATA
+   861
+   862
+   863
+   864
+   865
+   866
+   867 												;SUMAMOS 50 A LA NUEVA POSICION DEL PUNTERO
+   868 2EC4 18												CLC
+   869 2EC5 A5 90												LDA PUNTERO
+   870 2EC7 69 32												ADC #50
+   871 2EC9 85 90												STA PUNTERO
+   872 2ECB A5 91												LDA PUNTERO+1
+   873 2ECD 69 00												ADC #0
+   874 2ECF 85 91												STA PUNTERO+1
+   875 												;AGREGAMOS EL ARCHIVO AL TOTAL
+   876 2ED1 AE C0 29											LDX TOTALARCHIVOS
+   877 2ED4 E8												INX
+   878 2ED5 8E C0 29											STX TOTALARCHIVOS
+   879 												;MOSTRAMOS EL MENSAJE DE START PARA CONTINUAR
+   880 2ED8 A2 27												LDX #39
+   881 2EDA												FINCARGA
+   882 2EDA BD F1 29											LDA MENSAJESTART,X
+   883 2EDD 9D 4B 27											STA MENSAJECARGA,X
+   884 2EE0 CA												DEX
+   885 2EE1 10 F7												BPL FINCARGA
+   886 2EE3 20 B4 2C											JSR SERASTART
+   887 												;REDIRECCIONAMOS AL MENU PRINCIPAL
+   888 2EE6 4C CA 2C											JMP START
+   889 												;01 BYTE PORTB
+   890 												;02 BYTE BUFER
+   891 												;02 BYTE LENGHT
+   892 												;03 BYTE TOTAL DE BYTES CARGADOS
+   893 												;02 BYTE TOTAL DE BLOQUES
+   894 												;20 BYTE TITULO GRANDE 01
+   895 												;20 BYTE TITULO GRANDE 02
+   896 												;50 TOTAL DE BYTES
+   897
+   898 2EE9												INICIO
+   899 2EE9 20 79 2A										    JSR CLOSE
+   900 2EEC 20 00 20											JSR ROMRAM			;COPIO LA ROM A LA RAM
+   901 2EEF A2 C7												LDX # <@START
+   902 2EF1 A0 2C												LDY # >@START
+   903 2EF3 A9 03												LDA #$03
+   904 2EF5 86 02												STX $02
+   905 2EF7 84 03												STY $03
+   906 2EF9 85 09												STA $09
+   907 2EFB A0 FF												LDY #$FF
+   908 2EFD 84 08												STY $08
+   909 2EFF C8												INY   
+   910 2F00 8C 44 02											STY $0244
+   911 2F03 20 92 2C										    JSR RESETER
+   912 2F06 4C CA 2C										    JMP START
+   913 02E0-02E1> E9 2E										    RUN INICIO
